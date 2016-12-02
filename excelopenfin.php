@@ -1,8 +1,6 @@
 <?php
 include("utils/embx_dbconn.php");
-include("utils/embx_functions.php");
-
-
+include("utils/embx_functions.php");  
 ?>
 <!doctype html>
 <html class="no-js" lang="en">

@@ -151,7 +151,7 @@ include("utils/embx_functions.php");  //helsp
 							</div>
 							<div  class="small-3 columns">
 								<label>Username
-								<input id="username" name="username" value="BANK1U01" type="text" /></label>
+								<input id="username" name="username" value="BANK1U03" type="text" /></label>
 							</div>
 							<div  class="small-5 columns">
 								<label>Password</label>

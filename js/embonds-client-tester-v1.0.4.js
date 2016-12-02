@@ -25,6 +25,7 @@
 	var marketViews 		= [];
 	var activeMarketViewId 	= null;
 	var activeUser = null;
+	var mehmetTest = 23434;
 		
 	window.onload = function() {
 
@@ -191,7 +192,7 @@
 		
 		var l_action = "panic/trader/own";
 		if (command == "CANCELALLORDERS") {
-			l_path = "panic/trader/all";
+			l_action = "panic/trader/all";
 		}
 		
 		var msg = {
@@ -453,7 +454,13 @@
 		
 		
 		if(isSet(msg.messages)){
+			if (isSet(msg.messages[0].service)) {
+				if (msg.messages[0].service != 'heartbeat'){
+					console.log(msg);
+				}
+			}
 			if (isSet(msg.messages[0].service)){
+				
 				switch(msg.messages[0].service){
 				case "marketview":
 					var updateBondId = msg.messages[0].details.o.id;
@@ -492,6 +499,9 @@
 			case "marketview/get":
 				if (isSet(msg.response)){
 					//console.log(">>>> check here");
+					//console.log("Request ")
+					//console.log( msg.request);
+					//console.log("Response ")
 					//console.log(msg.response);
 					for (var i = 0; i < msg.response.length; i++){
 						var updateBondId = msg.response[i].o.id;
@@ -524,6 +534,7 @@
 					if (isSet(msg.response)){
 						var numviews = msg.response.length;
 						for (var i = 0; i < numviews; i++){
+							//console.log("Market view name: " + msg.response[i].name + "  ID:" + i);
 							
 							if (msg.response[i].name == "TURKEY"){
 								activeMarketViewId = i;
@@ -531,13 +542,14 @@
 							}
 						}
 						marketViews = msg.response;
+						//console.log(marketViews);
 					}
 				break;
 				
 				
 			case "marketview/subscribe":
 				if(isSet(msg.response)){
-					console.log("Getting marketview bonds");
+					//console.log("Getting marketview bonds");
 					getMarketViewBonds(activeUser.lsLogin);
 					
 				}
@@ -588,13 +600,13 @@
 						
 					}
 					//console.log(bondList);
-					writeText('bondList is retrieved.', true, 1);
+					writeText('bondList is retrieved with ' + bondList.length + ' bonds', true, 1);
 					
-					writeText('listing bonds...', false, 0);
+					//writeText('listing bonds...', false, 0);
 					for(var i=0;i<bondList.length;i++){
-						writeText(' bondId: ' + bondList[i].id + ' isin: ' + bondList[i].isin, false, 0);
+					//	writeText(' bondId: ' + bondList[i].id + ' isin: ' + bondList[i].isin, false, 0);
 					}
-					writeText('bonds listed.', false, 0);
+					//writeText('bonds listed.', false, 0);
 					
 					processData(1);
 									
@@ -696,11 +708,11 @@
 		var msg = {
 			"action":"marketview/subscribe",
 			"details":{
-				"ids":[0],
+				"ids":[],
 				"path":'list',
 				"type":"subscribe",
 				"overwrite": false,
-				"notifyOnAdd":true
+				"notifyOnAdd": true
 			}
 		}
 		sendMessage(username, msg);

@@ -242,6 +242,7 @@ var fin;
                 this.workbooks = {};
                 this.worksheets = {};
                 this.processExcelEvent = function (data) {
+					//console.log(data);  //MEHMET
                     switch (data.event) {
                         case "connected":
                             _this.dispatchEvent({ type: data.event });

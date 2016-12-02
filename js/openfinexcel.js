@@ -10,6 +10,7 @@ var marketviewlistpopulated = 0;
 var marketViewBondIds = [];
 var gotMarketViewBonds = 0;
 var subscribedMarketViewBonds = 0;
+//var activeMarketViewId = 0;
 
 
 function mehmetfunction(data){
@@ -28,6 +29,11 @@ $("#connecttoserver").click(function(){
 $("#orderadd").click(function(){
 	sendOrder($("#username").val(),"NAMEBUY","XS0212694920","97.35","1200M","","");
 })
+
+function excelOrder(direction,isin,price,size){
+	//cancelOrders($("#username").val(),"CANCELMYORDERS");
+	sendOrder($("#username").val(),"NAME"+direction,isin,price,size,"","");
+}
 
 $("#activeworkbook").change(function(){
 	var activeworkbook = $("#activeworkbook").val();
@@ -78,10 +84,11 @@ fin.desktop.main(function(){
 	//console.log(Excel);
 	//alert("excel initialized");
     Excel.getConnectionStatus(isExcelConnected);
+
+	
+
     Excel.addEventListener("connected", onExcelConnected);
 	Excel.addEventListener("workbookClosed", function(event){
-		console.log("workbook closed");
-		console.log(event);
 		refreshWorkbookList();
 	});
 	Excel.addEventListener("workbookAdded", function(event){
@@ -111,6 +118,16 @@ fin.desktop.main(function(){
 
     function onExcelConnected(){
 		$("#excelconnectionstatus").html("Connection Established");
+		Excel.addEventListener("sheetChanged", function(event){
+			onSheetChanged(event);
+		});
+		Excel.addEventListener("selectionChanged", function(event){
+			onSelectionChanged(event);
+		});
+
+		Excel.addEventListener("sheetDeactivated", function(event){
+			onSheetDeactivated(event);
+		});
 		//excelheartbeat();
 		runheartbeat();
 		refreshWorkbookList();
@@ -118,7 +135,7 @@ fin.desktop.main(function(){
 
 	function runheartbeat(){
 		setInterval(function(){excelheartbeat();
-			console.log("heartbeating");
+			//console.log("heartbeating");
 		},5000);
 	}
 
@@ -144,90 +161,71 @@ fin.desktop.main(function(){
 			numworkbooks = workbooks.length;
 			wbwait = 0;
 			wswait = workbooks.length;
-			
-			console.log('got workbooks: ' + numworkbooks + ' in total');
-			
 			for (var iwb = 0; iwb < numworkbooks; iwb++){
 				var numworksheets = 0;
 				workbooks[iwb].addEventListener("sheetAdded",function(event){
-					console.log("Sheet Added");
+					//console.log("Sheet Added");
 					excelheartbeat();
 				});
 				workbooks[iwb].addEventListener("sheetRemoved",function(event){
 					excelheartbeat();
-					console.log("Sheet Added");
+					//console.log("Sheet Added");
 				});
-				
 				workbooks[iwb].getWorksheets(function(worksheets){
-					//console.log(worksheets);
-					//console.log(worksheets[0].name);
 					wswait = wswait -1;
 					numworksheets = worksheets.length;
 					for (var iws = 0; iws < numworksheets; iws++){
 						if (worksheets[iws].name === "EMBONDS"){
-							console.log('got embonds worksheet');
+							//console.log('got embonds worksheet');
 							worksheets[iws].setCellName(excelRefConvert(3,3),"Mehmet");
 							worksheets[iws].getCellByName("Mehmet",function(data){
 								$("#embondscell").html(data.value);
 							});
-							$("#embondspublishingworksheet").val(1);
+							$("#embondspublishingworksheet").val(1).change();
 							excelsheets = excelsheets + "<li>"+worksheets[iws].workbook+" <strong>"+worksheets[iws].name+"</strong></li>";
-							$("#embondsworkbook").val(worksheets[iws].workbook.name);
-							//console.log("EMbonds workbook is: " + $("#embondsworkbook").val());
+							$("#embondsworkbook").val(worksheets[iws].workbook);
 						} else {
 							excelsheets = excelsheets + "<li>"+worksheets[iws].workbook+" "+worksheets[iws].name+"</li>";
 						}
-					}
+					} // cycle over worksheets
 					if (wswait == 0){
 						$("#excelsheets").html(excelsheets);
 					} else {
-						console.log("Wswait  = " + wswait);
 					}
-				});
-			}
+				}); 
+			} // cycle over workbooks
 			
 			if (bondlistpushed == 0){
 				if (bondList.length > 0) {
+					//console.log("EMbonds Workbook: " + $("#embondsworkbook").val());
 					var embondsworkbook = fin.desktop.Excel.getWorkbookByName($("#embondsworkbook").val());
-					//console.log("embonds workbook object");
-					//console.log(embondsworkbook);
 					if (embondsworkbook) {
 						var embondsworksheet = embondsworkbook.getWorksheetByName("EMBONDS");
+						//console.log("EMBonds WorkSheet: " + embondsworksheet);
 						if (embondsworksheet){
-							//console.log("embonds worksheet object");
-							//console.log(embondsworksheet);
 							for (var bl = 0; bl < bondList.length; bl++){
-
 								var cellref = "BA"+(1+bl);
-								//console.log("Setting cells *"+cellref+"*");
 								embondsworksheet.setCells([[bondList[bl].bondname,bondList[bl].isin,bondList[bl].bondname]], cellref);
 							}
 							bondlistpushed = 1;
-							embondsworksheet.formatRange("BA1",3,bondList.length,{ font: {color: "0,0,0,1", size: 12, name: "Courier New"},
-							columnWidth: 3});
+							embondsworksheet.formatRange("BA:BC",{ font: {color: "0,0,0,1", size: 12, name: "Courier New"}, columnWidth: 3});
 							embondsworksheet.setCellName("$BA:$BB","EmbondsBondListNameToIsin");
 							embondsworksheet.setCellName("$BB:$BC","EmbondsBondListIsinToName");
 							embondsworksheet.setCells([["ISIN","BondName","BidSize","BidPx","AskPx","AskSize","QuoteType","Pub"]],"A1");
-							embondsworksheet.formatRange("A1",7,0,{interior: {color: "200,200,200,1"}, font: {bold: true}});
+//							embondsworksheet.formatRange("A1:H1",{interior: {color: "200,200,200,1"}, font: {bold: true}});
+							embondsworksheet.formatRange("A1:H1",{ font: {bold: true}});
 							for (var il = 2; il < 100; il++){
-								//embondsworksheet.setCells([["=if(A"+il+"<>\"\",vlookup(A"+il+",EmbondsBondListIsinToName,2,false),\"\"),\"\")"]],"B"+il);
-								//console.log("=if(A"+il+"<>\"\",vlookup(A"+il+",EmbondsBondListIsinToName,2,false),\"\"),\"\")");
-								//embondsworksheet.setCells([["2"]],"C"+il);
-								//embondsworksheet.setCells([["=E"+il+"+F"+il]],"D"+il);
-								//embondsworksheet.setCells([["=if(isblank(G"+il+"),\"XX\",\"yy\")"]],"D"+il );
-								
 								embondsworksheet.setCells([['=IF(A'+il+'<>"",VLOOKUP(A'+il+',EmbondsBondListIsinToName,2,FALSE),"")']],"B"+il);
-								
-								//console.log("C"+il);
-								//console.log("=E"+il+"+F"+il);
 							}
-							
 						}
 					}
 				}
 			}
 			
+			//console.log(mehmetTest);
+			//console.log("bond list pushed: "+ bondlistpushed + "  market view list pop: "+marketviewlistpopulated + "active mvid:" + activeMarketViewId);
 			if (bondlistpushed == 1 && marketviewlistpopulated == 0){
+				//console.log('bond list is pushed but marketview not yet populated');
 				if (activeMarketViewId){
 					var pgg = null;
 					var bondid = null;
